@@ -1,0 +1,2020 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calibration Reminder System</title>
+    <style>
+        /* Base Styles */
+        :root {
+            --primary: #1e90ff;
+            --primary-dark: #1565c0;
+            --secondary: #6c757d;
+            --secondary-dark: #495057;
+            --success: #28a745;
+            --success-dark: #1e7e34;
+            --danger: #dc3545;
+            --danger-dark: #b02a37;
+            --info: #17a2b8;
+            --info-dark: #117a8b;
+            --warning: #ffc107;
+            --warning-dark: #e0a800;
+            --background: #f5f6fa;
+            --background-dark: #1c2526;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --card-bg-dark: rgba(44, 62, 80, 0.9);
+            --text: #2d3436;
+            --text-dark: #dfe6e9;
+            --border: #dfe4ea;
+            --border-dark: #4b5e6e;
+            --shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            --gradient: linear-gradient(135deg, #1e90ff, #54a0ff);
+            --scrollbar: #adb5bd;
+            --scrollbar-dark: #4b5e6e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 1.5rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.5s ease, color 0.5s ease;
+        }
+
+        body.dark-mode {
+            background-color: var(--background-dark);
+            color: var(--text-dark);
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            flex: 1;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        body.dark-mode h1 {
+            color: #54a0ff;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        body.dark-mode h2 {
+            color: #54a0ff;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes zoomIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes ripple {
+            0% {
+                transform: scale(0);
+                opacity: 0.5;
+            }
+
+            100% {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        @keyframes glow {
+            0% {
+                box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+            }
+
+            50% {
+                box-shadow: 0 0 20px rgba(30, 144, 255, 0.5);
+            }
+
+            100% {
+                box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+            }
+        }
+
+        @keyframes slideToggle {
+            from {
+                max-height: 0;
+                opacity: 0;
+            }
+
+            to {
+                max-height: 1000px;
+                opacity: 1;
+            }
+        }
+
+        /* Card Styles */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.5s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        body.dark-mode .card {
+            background: var(--card-bg-dark);
+            border: 1px solid var(--border-dark);
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        body.dark-mode .card-header {
+            border-bottom: 1px solid var(--border-dark);
+        }
+
+        .card-header h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .card-header i {
+            transition: transform 0.3s ease;
+        }
+
+        .card-header.collapsed i {
+            transform: rotate(-90deg);
+        }
+
+        .card-content {
+            max-height: 1000px;
+            overflow-y: auto;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+            padding: 1rem 0;
+        }
+
+        .card-content.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+
+        .card-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .card-content::-webkit-scrollbar-track {
+            background: var(--background);
+        }
+
+        .card-content::-webkit-scrollbar-thumb {
+            background: var(--scrollbar);
+            border-radius: 4px;
+        }
+
+        body.dark-mode .card-content::-webkit-scrollbar-track {
+            background: var(--background-dark);
+        }
+
+        body.dark-mode .card-content::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-dark);
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .btn {
+            position: relative;
+            overflow: hidden;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            background: var(--gradient);
+        }
+
+        .btn i {
+            margin-right: 0.5rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            animation: glow 1.5s infinite;
+        }
+
+        .btn:focus {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: scale(0);
+            pointer-events: none;
+        }
+
+        .btn:active::after {
+            animation: ripple 0.6s ease-out;
+        }
+
+        .btn-primary {
+            background: var(--gradient);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #1565c0, #1e90ff);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--secondary-dark);
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-success:hover {
+            background: var(--success-dark);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: var(--danger-dark);
+        }
+
+        .btn-info {
+            background: var(--info);
+        }
+
+        .btn-info:hover {
+            background: var(--info-dark);
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: var(--text);
+        }
+
+        .btn-warning:hover {
+            background: var(--warning-dark);
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .btn[data-tooltip]:hover::before {
+            content: attr(data-tooltip);
+            position: absolute;
+            top: -2.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary);
+            color: white;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            z-index: 10;
+        }
+
+        body.dark-mode .btn[data-tooltip]:hover::before {
+            background: #54a0ff;
+        }
+
+        .search-filter {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            align-items: center;
+        }
+
+        .search-filter input,
+        .search-filter select {
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            max-width: 250px;
+        }
+
+        body.dark-mode .search-filter input,
+        body.dark-mode .search-filter select {
+            background: var(--card-bg-dark);
+            border-color: var(--border-dark);
+            color: var(--text-dark);
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            max-height: 500px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        table {
+            width: 100%;
+            min-width: 1200px;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        body.dark-mode table {
+            background: var(--card-bg-dark);
+        }
+
+        th,
+        td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        body.dark-mode th,
+        body.dark-mode td {
+            border-bottom: 1px solid var(--border-dark);
+        }
+
+        th {
+            background: var(--gradient);
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            cursor: pointer;
+        }
+
+        th.sortable::after {
+            content: '\f0dc';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            margin-left: 0.5rem;
+            opacity: 0.5;
+        }
+
+        th.sort-asc::after {
+            content: '\f0de';
+        }
+
+        th.sort-desc::after {
+            content: '\f0dd';
+        }
+
+        tr {
+            transition: background-color 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        tr:hover {
+            background-color: #e9ecef;
+        }
+
+        body.dark-mode tr:hover {
+            background-color: #3b4b5c;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        .dashboard div {
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            color: white;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            background: var(--gradient);
+        }
+
+        .dashboard div:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .due-soon {
+            background: linear-gradient(135deg, #ffc107, #ffca28);
+            color: var(--text);
+        }
+
+        .overdue {
+            background: linear-gradient(135deg, #dc3545, #e91e63);
+        }
+
+        .not-due {
+            background: linear-gradient(135deg, #28a745, #2ecc71);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 16px;
+            max-width: 700px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: zoomIn 0.3s ease-out;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        body.dark-mode .modal-content {
+            background: var(--card-bg-dark);
+        }
+
+        .modal-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal-content::-webkit-scrollbar-track {
+            background: var(--background);
+        }
+
+        .modal-content::-webkit-scrollbar-thumb {
+            background: var(--scrollbar);
+            border-radius: 4px;
+        }
+
+        body.dark-mode .modal-content::-webkit-scrollbar-track {
+            background: var(--background-dark);
+        }
+
+        body.dark-mode .modal-content::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-dark);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1rem;
+        }
+
+        body.dark-mode .modal-header {
+            border-bottom: 1px solid var(--border-dark);
+        }
+
+        .modal-footer {
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+            text-align: right;
+        }
+
+        body.dark-mode .modal-footer {
+            border-top: 1px solid var(--border-dark);
+        }
+
+        .close {
+            color: var(--secondary);
+            font-size: 1.75rem;
+            cursor: pointer;
+            transition: color 0.3s ease, transform 0.3s ease;
+        }
+
+        .close:hover {
+            color: var(--primary);
+            transform: rotate(90deg);
+        }
+
+        body.dark-mode .close {
+            color: var(--text-dark);
+        }
+
+        body.dark-mode .close:hover {
+            color: #54a0ff;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+
+        body.dark-mode label {
+            color: var(--text-dark);
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 0.85rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+            background: var(--card-bg);
+        }
+
+        body.dark-mode input,
+        body.dark-mode select {
+            background: var(--card-bg-dark);
+            border-color: var(--border-dark);
+            color: var(--text-dark);
+        }
+
+        input:focus,
+        select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 8px rgba(30, 144, 255, 0.3);
+            transform: scale(1.01);
+            outline: none;
+        }
+
+        input::placeholder,
+        select::placeholder {
+            color: #adb5bd;
+            opacity: 0.7;
+        }
+
+        body.dark-mode input::placeholder,
+        body.dark-mode select::placeholder {
+            color: #b0bec5;
+        }
+
+        .error {
+            color: var(--danger);
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .alert {
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            position: relative;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .alert .close {
+            font-size: 1rem;
+            position: absolute;
+            right: 1rem;
+            top: 1rem;
+        }
+
+        #alertPlaceholder {
+            max-width: 700px;
+            margin: 0 auto 1.5rem;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        li {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            transition: background-color 0.3s ease;
+        }
+
+        body.dark-mode li {
+            border-bottom: 1px solid var(--border-dark);
+        }
+
+        li:hover {
+            background-color: #e9ecef;
+        }
+
+        body.dark-mode li:hover {
+            background-color: #3b4b5c;
+        }
+
+        #emailLogTable th,
+        #emailLogTable td {
+            padding: 0.85rem;
+            white-space: nowrap;
+        }
+
+        #emailLogModal .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .footer {
+            text-align: center;
+            color: var(--secondary);
+            font-size: 0.875rem;
+            margin-top: 2rem;
+            padding: 1.5rem 0;
+            border-top: 2px solid var(--border);
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.05), transparent);
+        }
+
+        body.dark-mode .footer {
+            color: var(--text-dark);
+            border-top-color: var(--border-dark);
+            background: linear-gradient(to top, rgba(255, 255, 255, 0.05), transparent);
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: var(--gradient);
+            color: white;
+            border: none;
+            padding: 0.5rem;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(360deg);
+        }
+
+        .theme-toggle i {
+            font-size: 1.25rem;
+        }
+
+        .spinner {
+            display: none;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--background);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--scrollbar);
+            border-radius: 4px;
+        }
+
+        body.dark-mode ::-webkit-scrollbar-track {
+            background: var(--background-dark);
+        }
+
+        body.dark-mode ::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-dark);
+        }
+
+        .clock {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            font-size: 1rem;
+            color: var(--text);
+            background: var(--card-bg);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+        }
+
+        body.dark-mode .clock {
+            color: var(--text-dark);
+            background: var(--card-bg-dark);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.75rem;
+            }
+
+            h2 {
+                font-size: 1.25rem;
+            }
+
+            .btn {
+                padding: 0.6rem 1rem;
+                font-size: 0.875rem;
+            }
+
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            th,
+            td {
+                padding: 0.6rem;
+                font-size: 0.875rem;
+            }
+
+            .modal-content {
+                width: 95%;
+                padding: 1.25rem;
+            }
+
+            .container {
+                padding: 0 0.75rem;
+            }
+
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+
+            .search-filter input,
+            .search-filter select {
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            th,
+            td {
+                padding: 0.5rem;
+                font-size: 0.75rem;
+            }
+
+            .dashboard div {
+                padding: 1rem;
+            }
+
+            .modal-content {
+                margin: 10% auto;
+            }
+
+            .btn-small {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.75rem;
+            }
+
+            .clock {
+                font-size: 0.875rem;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .dashboard {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .container {
+                max-width: 1400px;
+            }
+
+            .button-group {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (min-width: 1600px) {
+            h1 {
+                font-size: 3rem;
+            }
+
+            .container {
+                max-width: 1600px;
+            }
+
+            .btn {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <button class="theme-toggle" data-tooltip="Toggle Dark Mode" aria-label="Toggle dark mode">
+        <i class="fas fa-moon"></i>
+    </button>
+    <div class="clock" id="clock">Loading time...</div>
+    <div class="container">
+        <h1>Calibration Reminder System</h1>
+        <div id="alertPlaceholder" aria-live="polite"></div>
+        <div id="loading" class="spinner"></div>
+
+        <div class="card">
+            <div class="card-header" onclick="toggleCollapse(this)">
+                <h3>Status Dashboard</h3>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="card-content dashboard">
+                <div class="due-soon">
+                    <h3 id="dueSoon">0</h3>
+                    <p>Due Soon</p>
+                </div>
+                <div class="overdue">
+                    <h3 id="overdue">0</h3>
+                    <p>Overdue</p>
+                </div>
+                <div class="not-due">
+                    <h3 id="notDue">0</h3>
+                    <p>Not Due</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header" onclick="toggleCollapse(this)">
+                <h3>Controls</h3>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="card-content">
+                <div class="search-filter">
+                    <input type="text" id="searchInput" placeholder="Search equipments..."
+                        aria-label="Search equipments">
+                    <select id="statusFilter" aria-label="Filter by status">
+                        <option value="">All Statuses</option>
+                        <option value="due-soon">Due Soon</option>
+                        <option value="overdue">Overdue</option>
+                        <option value="not-due">Not Due</option>
+                    </select>
+                    <select id="intervalFilter" aria-label="Filter by interval">
+                        <option value="">All Intervals</option>
+                        <option value="6">6 Months</option>
+                        <option value="12">12 Months</option>
+                        <option value="24">24 Months</option>
+                    </select>
+                </div>
+                <div class="button-group">
+                    <button id="addNewBtn" class="btn btn-primary" data-tooltip="Add a new calibration entry"><i
+                            class="fas fa-plus"></i> Add New Calibration</button>
+                    <button id="refreshBtn" class="btn btn-secondary" data-tooltip="Refresh table data"><i
+                            class="fas fa-sync"></i> Refresh Data</button>
+                    <button id="sendRemindersBtn" class="btn btn-success"
+                        data-tooltip="Send reminders for due instruments"><i class="fas fa-envelope"></i> Send
+                        Reminders</button>
+                    <button id="clearDataBtn" class="btn btn-danger" data-tooltip="Clear all calibration data"><i
+                            class="fas fa-trash"></i> Clear All Data</button>
+                    <a id="downloadBtn" class="btn btn-info" href="/api/data?download=true"
+                        download="calibration_data.json" data-tooltip="Download all data as JSON"><i
+                            class="fas fa-download"></i> Download Data</a>
+                    <button id="exportCsvBtn" class="btn btn-info" data-tooltip="Export table as CSV"><i
+                            class="fas fa-file-csv"></i> Export CSV</button>
+                    <button id="uploadCsvBtn" class="btn btn-primary" data-tooltip="Upload CSV file"><i
+                            class="fas fa-upload"></i> Upload CSV</button>
+                    <button id="manageDepartmentsBtn" class="btn btn-primary"
+                        data-tooltip="Manage departments and emails"><i class="fas fa-users"></i> Manage
+                        Departments</button>
+                    <button id="missingDataBtn" class="btn btn-warning" data-tooltip="View overdue instruments"><i
+                            class="fas fa-exclamation-triangle"></i> Overdue Instruments</button>
+                    <button id="emailLogBtn" class="btn btn-info" data-tooltip="View email sending history"><i
+                            class="fas fa-history"></i> Email Log</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header" onclick="toggleCollapse(this)">
+                <h3>Calibration Data</h3>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="card-content">
+                <div class="table-container">
+                    <table id="calibTable">
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-sort="equipment_name">Equipment Name</th>
+                                <th class="sortable" data-sort="make">Make</th>
+                                <th class="sortable" data-sort="manufactured">Manufactured</th>
+                                <th class="sortable" data-sort="serial_number">Serial Number</th>
+                                <th class="sortable" data-sort="calibration_date">Calibration Date</th>
+                                <th class="sortable" data-sort="number_of_instruments">Number of Instruments</th>
+                                <th class="sortable" data-sort="department">Department</th>
+                                <th>Team Emails</th>
+                                <th class="sortable" data-sort="recalibration_interval">Interval (months)</th>
+                                <th class="sortable" data-sort="last_reminder">Last Reminder</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            Hosted on Vercel. Data stored in Google Sheets. Emails sent via Gmail SMTP.
+        </div>
+    </div>
+
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add New Calibration</h2>
+                <span class="close" aria-label="Close modal">&times;</span>
+            </div>
+            <form id="addForm">
+                <div class="form-group">
+                    <label for="equipment_name">Equipment Name</label>
+                    <input type="text" id="equipment_name" required pattern="[A-Za-z0-9\s]{3,50}"
+                        aria-describedby="equipment_error" placeholder="e.g., Vernier Caliper">
+                    <span class="error" id="equipment_error">Name must be 3-50 characters (alphanumeric and
+                        spaces)</span>
+                </div>
+                <div class="form-group">
+                    <label for="make">Make</label>
+                    <input type="text" id="make" required pattern="[A-Za-z0-9\s]{1,50}" aria-describedby="make_error"
+                        placeholder="e.g., Mitutoyo">
+                    <span class="error" id="make_error">Make must be at least 1 character</span>
+                </div>
+                <div class="form-group">
+                    <label for="manufactured">Manufactured</label>
+                    <input type="text" id="manufactured" required pattern="[A-Za-z0-9\s]{1,50}"
+                        aria-describedby="manufactured_error" placeholder="e.g., Manufacturer Name">
+                    <span class="error" id="manufactured_error">Manufactured must be at least 1 character</span>
+                </div>
+                <div class="form-group">
+                    <label for="serial_number">Serial Number</label>
+                    <input type="text" id="serial_number" required pattern="[A-Za-z0-9\s]{1,50}"
+                        aria-describedby="serial_error" placeholder="e.g., SN12345">
+                    <span class="error" id="serial_error">Serial Number must be at least 1 character</span>
+                </div>
+                <div class="form-group">
+                    <label for="calibration_date">Calibration Date</label>
+                    <input type="date" id="calibration_date" required aria-describedby="date_error">
+                    <span class="error" id="date_error">Please select a valid date (not in future)</span>
+                </div>
+                <div class="form-group">
+                    <label for="number_of_instruments">Number of Instruments</label>
+                    <input type="number" id="number_of_instruments" min="1" max="1000" required
+                        aria-describedby="number_error" placeholder="e.g., 1">
+                    <span class="error" id="number_error">Number between 1 and 1000</span>
+                </div>
+                <div class="form-group">
+                    <label for="department">Department</label>
+                    <select id="department" required aria-describedby="department_error">
+                        <!-- Populated by JS -->
+                    </select>
+                    <span class="error" id="department_error">Please select a department</span>
+                </div>
+                <div class="form-group">
+                    <label for="emails">Team Emails (comma-separated)</label>
+                    <input type="text" id="emails" required aria-describedby="emails_error"
+                        placeholder="e.g., user1@example.com, user2@example.com">
+                    <span class="error" id="emails_error">Valid comma-separated emails</span>
+                </div>
+                <div class="form-group">
+                    <label for="recalibration_interval">Recalibration Interval (months)</label>
+                    <select id="recalibration_interval" required>
+                        <option value="6">6 Months</option>
+                        <option value="12" selected>12 Months</option>
+                        <option value="24">24 Months</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label><input type="checkbox" id="send_email" checked> Send confirmation email</label>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Entry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Upload CSV</h2>
+                <span class="close" aria-label="Close modal">&times;</span>
+            </div>
+            <form id="uploadForm">
+                <div class="form-group">
+                    <label for="csvFile">Select CSV File</label>
+                    <input type="file" id="csvFile" accept=".csv" required>
+                </div>
+                <div class="form-group">
+                    <label><input type="checkbox" id="send_emails_upload" checked> Send confirmation emails</label>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-upload"></i> Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="departmentsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Manage Departments</h2>
+                <span class="close" aria-label="Close modal">&times;</span>
+            </div>
+            <div id="departmentsList"></div>
+            <button id="addDepartmentBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Add Department</button>
+            <div class="modal-footer">
+                <button id="saveDepartmentsBtn" class="btn btn-success"><i class="fas fa-save"></i> Save
+                    Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="missingModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Overdue Instruments</h2>
+                <span class="close" aria-label="Close modal">&times;</span>
+            </div>
+            <ul id="missingList"></ul>
+            <div class="modal-footer">
+                <a href="/api/missing?download=true" class="btn btn-info" download="overdue_instruments.json"
+                    data-tooltip="Download overdue data as JSON"><i class="fas fa-download"></i> Download Overdue
+                    Data</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="emailLogModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Email Log</h2>
+                <span class="close" aria-label="Close modal">&times;</span>
+            </div>
+            <div class="table-container">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-sort="timestamp">Timestamp</th>
+                            <th class="sortable" data-sort="equipment_name">Equipment</th>
+                            <th>Emails</th>
+                            <th class="sortable" data-sort="type">Type</th>
+                            <th class="sortable" data-sort="success">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="emailLogTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script>
+        const API_BASE = "/api";
+        let tableData = [];
+        let departments = [];
+        let sortColumn = null;
+        let sortDirection = 1;
+
+        function showAlert(type, message) {
+            const placeholder = document.getElementById('alertPlaceholder');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i> ${message} <span class="close" aria-label="Close alert">&times;</span>`;
+            placeholder.appendChild(alertDiv);
+            alertDiv.querySelector('.close').addEventListener('click', () => alertDiv.remove());
+            setTimeout(() => alertDiv.remove(), 5000);
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { hour12: false });
+            document.getElementById('clock').textContent = `Current Time: ${timeString}`;
+        }
+
+        function toggleCollapse(header) {
+            const content = header.nextElementSibling;
+            content.classList.toggle('collapsed');
+            header.classList.toggle('collapsed');
+            if (!content.classList.contains('collapsed')) {
+                content.style.animation = 'slideToggle 0.3s ease forwards';
+            }
+        }
+
+        function validateEmails(emailString) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const emails = emailString.split(',').map(e => e.trim()).filter(Boolean);
+            if (emails.length === 0) {
+                document.getElementById('emails_error').textContent = 'At least one email is required';
+                return false;
+            }
+            const invalidEmails = emails.filter(e => !emailRegex.test(e));
+            if (invalidEmails.length > 0) {
+                document.getElementById('emails_error').textContent = `Invalid emails: ${invalidEmails.join(', ')}`;
+                return false;
+            }
+            document.getElementById('emails_error').textContent = 'Valid comma-separated emails';
+            return true;
+        }
+
+        function validateCalibrationDate(dateStr) {
+            const inputDate = new Date(dateStr);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return inputDate <= today;
+        }
+
+        function getStatus(entry) {
+            const calibDate = new Date(entry.calibration_date);
+            const interval = parseInt(entry.recalibration_interval);
+            const dueDate = new Date(calibDate.setMonth(calibDate.getMonth() + interval));
+            const now = new Date();
+            const daysUntilDue = (dueDate - now) / (1000 * 60 * 60 * 24);
+            if (daysUntilDue < 0) return 'overdue';
+            if (daysUntilDue <= 30) return 'due-soon';
+            return 'not-due';
+        }
+
+        function exportToCsv() {
+            const headers = ['Equipment Name', 'Make', 'Manufactured', 'Serial Number', 'Calibration Date', 'Number of Instruments', 'Department', 'Team Emails', 'Interval (months)', 'Last Reminder'];
+            const csvRows = [headers.join(',')];
+            tableData.forEach(entry => {
+                const lastReminder = entry.last_reminder ? new Date(parseInt(entry.last_reminder) * 1000).toLocaleString() : 'Pending';
+                const row = [
+                    `"${entry.equipment_name}"`,
+                    `"${entry.make}"`,
+                    `"${entry.manufactured}"`,
+                    `"${entry.serial_number}"`,
+                    entry.calibration_date,
+                    entry.number_of_instruments,
+                    `"${entry.department}"`,
+                    `"${entry.emails}"`,
+                    entry.recalibration_interval,
+                    `"${lastReminder}"`
+                ];
+                csvRows.push(row.join(','));
+            });
+            const csvContent = csvRows.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'calibration_data.csv');
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        async function fetchData() {
+            showLoading();
+            try {
+                const res = await fetch(`${API_BASE}/data`);
+                if (!res.ok) throw new Error('Failed to fetch data');
+                return await res.json();
+            } catch (e) {
+                showAlert('danger', 'Cannot fetch data: ' + e.message);
+                return [];
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function fetchDepartments() {
+            showLoading();
+            try {
+                const res = await fetch(`${API_BASE}/departments`);
+                if (!res.ok) throw new Error('Failed to fetch departments');
+                const data = await res.json();
+                departments = Array.isArray(data) ? data : [];
+                return departments;
+            } catch (e) {
+                showAlert('danger', 'Cannot fetch departments: ' + e.message);
+                departments = [];
+                return [];
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+        }
+
+        async function saveEntry(obj) {
+            showLoading();
+            try {
+                const res = await fetch(`${API_BASE}/data`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(obj)
+                });
+                if (!res.ok) {
+                    const error = await res.json();
+                    throw new Error(error.error || 'Unknown error');
+                }
+                return await res.json();
+            } catch (err) {
+                throw err;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function updateEntry(id, obj) {
+            showLoading();
+            try {
+                const res = await fetch(`${API_BASE}/data`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(obj)
+                });
+                if (!res.ok) {
+                    const error = await res.json();
+                    throw new Error(error.error || 'Unknown error');
+                }
+                return await res.json();
+            } catch (err) {
+                throw err;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function deleteEntry(id) {
+            showLoading();
+            try {
+                const res = await fetch(`${API_BASE}/data`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                if (!res.ok) {
+                    const error = await res.json();
+                    throw new Error(error.error || 'Unknown error');
+                }
+            } catch (err) {
+                throw err;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function clearAll() {
+            showLoading();
+            try {
+                const res = await fetch(`${API_BASE}/data`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ all: true })
+                });
+                if (!res.ok) {
+                    const error = await res.json();
+                    throw new Error(error.error || 'Unknown error');
+                }
+            } catch (err) {
+                throw err;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function sendEmail(id) {
+            showLoading();
+            try {
+                const res = await fetch(`${API_BASE}/send-email/${id}`, { method: 'POST' });
+                if (!res.ok) {
+                    const error = await res.json();
+                    throw new Error(error.error || 'Unknown error');
+                }
+            } catch (err) {
+                throw err;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function sendReminders() {
+            showLoading();
+            try {
+                const res = await fetch(`${API_BASE}/send_reminders`, { method: 'POST' });
+                if (!res.ok) {
+                    const error = await res.json();
+                    throw new Error(error.error || 'Unknown error');
+                }
+            } catch (err) {
+                throw err;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function getStatus() {
+            showLoading();
+            try {
+                const res = await fetch(`${API_BASE}/status`);
+                if (!res.ok) throw new Error('Failed to fetch status');
+                return await res.json();
+            } catch (e) {
+                showAlert('danger', 'Cannot fetch status: ' + e.message);
+                return { due_soon: 0, overdue: 0, not_due: 0 };
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function getMissing() {
+            showLoading();
+            try {
+                const res = await fetch(`${API_BASE}/missing`);
+                if (!res.ok) throw new Error('Failed to fetch missing data');
+                return await res.json();
+            } catch (e) {
+                showAlert('danger', 'Cannot fetch missing data: ' + e.message);
+                return [];
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function getEmailLog() {
+            showLoading();
+            try {
+                const res = await fetch(`${API_BASE}/email_log`);
+                if (!res.ok) throw new Error('Failed to fetch email log');
+                return await res.json();
+            } catch (e) {
+                showAlert('danger', 'Cannot fetch email log: ' + e.message);
+                return [];
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function resetModal() {
+            const modal = document.getElementById('addModal');
+            const form = document.getElementById('addForm');
+            const title = document.getElementById('modalTitle');
+            form.reset();
+            delete modal.dataset.editId;
+            title.textContent = 'Add New Calibration';
+            document.querySelectorAll('#addForm .error').forEach(error => {
+                error.style.display = 'none';
+            });
+            document.querySelectorAll('#addForm input, #addForm select').forEach(input => {
+                input.style.borderColor = 'var(--border)';
+            });
+            document.getElementById('send_email').checked = true;
+        }
+
+        async function populateDepartmentsSelect() {
+            if (departments.length === 0) {
+                await fetchDepartments();
+            }
+            const select = document.getElementById('department');
+            select.innerHTML = '<option value="">Select Department</option>';
+            departments.forEach(dep => {
+                const option = document.createElement('option');
+                option.value = dep.name;
+                option.textContent = dep.name;
+                select.appendChild(option);
+            });
+        }
+
+        function populateDepartmentsList() {
+            const list = document.getElementById('departmentsList');
+            list.innerHTML = '';
+            if (!Array.isArray(departments) || departments.length === 0) {
+                list.innerHTML = '<p>No departments available. Add a new department below.</p>';
+                departments = [];
+                return;
+            }
+            departments.forEach((dep, index) => {
+                const div = document.createElement('div');
+                div.className = 'form-group';
+                div.innerHTML = `
+                    <label>Department Name</label>
+                    <input type="text" class="dep-name" value="${dep.name || ''}" data-index="${index}" required>
+                    <span class="error" id="dep-name-error-${index}" style="display: none;">Department name is required</span>
+                    <label>Emails (comma-separated)</label>
+                    <input type="text" class="dep-emails" value="${dep.emails || ''}" data-index="${index}" required>
+                    <span class="error" id="dep-emails-error-${index}" style="display: none;">Valid comma-separated emails required</span>
+                    <button class="btn btn-danger btn-small remove-dep" data-index="${index}"><i class="fas fa-trash"></i> Remove</button>
+                `;
+                list.appendChild(div);
+            });
+            document.querySelectorAll('.remove-dep').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const index = parseInt(btn.dataset.index);
+                    departments.splice(index, 1);
+                    populateDepartmentsList();
+                });
+            });
+            document.querySelectorAll('.dep-name').forEach(input => {
+                input.addEventListener('input', e => {
+                    const valid = e.target.value.trim().length > 0;
+                    const error = document.getElementById(`dep-name-error-${e.target.dataset.index}`);
+                    e.target.style.borderColor = valid ? 'var(--border)' : 'var(--danger)';
+                    error.style.display = valid ? 'none' : 'block';
+                });
+            });
+            document.querySelectorAll('.dep-emails').forEach(input => {
+                input.addEventListener('input', e => {
+                    const valid = validateEmails(e.target.value);
+                    const error = document.getElementById(`dep-emails-error-${e.target.dataset.index}`);
+                    e.target.style.borderColor = valid ? 'var(--border)' : 'var(--danger)';
+                    error.style.display = valid ? 'none' : 'block';
+                });
+            });
+        }
+
+        document.getElementById('saveDepartmentsBtn').addEventListener('click', async () => {
+            const nameInputs = document.querySelectorAll('.dep-name');
+            const emailInputs = document.querySelectorAll('.dep-emails');
+            const newDepts = [];
+            let hasError = false;
+            nameInputs.forEach((nameInp, index) => {
+                const name = nameInp.value.trim();
+                const emails = emailInputs[index].value.trim();
+                const nameError = document.getElementById(`dep-name-error-${index}`);
+                const emailError = document.getElementById(`dep-emails-error-${index}`);
+                if (!name) {
+                    nameInp.style.borderColor = 'var(--danger)';
+                    nameError.style.display = 'block';
+                    hasError = true;
+                }
+                if (!validateEmails(emails)) {
+                    emailInputs[index].style.borderColor = 'var(--danger)';
+                    emailError.style.display = 'block';
+                    hasError = true;
+                }
+                if (name && emails) {
+                    newDepts.push({ name, emails });
+                }
+            });
+            if (hasError) {
+                showAlert('danger', 'Please correct invalid fields before saving');
+                return;
+            }
+            try {
+                await fetch(`${API_BASE}/departments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newDepts)
+                }).then(res => {
+                    if (!res.ok) throw new Error('Failed to save departments');
+                    return res.json();
+                });
+                showAlert('success', 'Departments saved');
+                document.getElementById('departmentsModal').style.display = 'none';
+            } catch (err) {
+                showAlert('danger', 'Save departments failed: ' + err.message);
+            }
+        });
+
+        function filterAndSortTable() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const intervalFilter = document.getElementById('intervalFilter').value;
+
+            let filteredData = [...tableData];
+
+            if (searchTerm) {
+                filteredData = filteredData.filter(entry =>
+                    entry.equipment_name.toLowerCase().includes(searchTerm) ||
+                    entry.make.toLowerCase().includes(searchTerm) ||
+                    entry.manufactured.toLowerCase().includes(searchTerm) ||
+                    entry.serial_number.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            if (statusFilter) {
+                filteredData = filteredData.filter(entry => getStatus(entry) === statusFilter);
+            }
+
+            if (intervalFilter) {
+                filteredData = filteredData.filter(entry =>
+                    entry.recalibration_interval.toString() === intervalFilter
+                );
+            }
+
+            if (sortColumn) {
+                filteredData.sort((a, b) => {
+                    let valA = a[sortColumn];
+                    let valB = b[sortColumn];
+                    if (sortColumn === 'calibration_date') {
+                        valA = new Date(valA);
+                        valB = new Date(valB);
+                    } else if (sortColumn === 'last_reminder') {
+                        valA = a.last_reminder ? parseInt(a.last_reminder) : 0;
+                        valB = b.last_reminder ? parseInt(b.last_reminder) : 0;
+                    } else if (sortColumn === 'number_of_instruments' || sortColumn === 'recalibration_interval') {
+                        valA = parseInt(valA);
+                        valB = parseInt(valB);
+                    }
+                    return (valA < valB ? -1 : valA > valB ? 1 : 0) * sortDirection;
+                });
+            }
+
+            const tbody = document.querySelector('#calibTable tbody');
+            tbody.innerHTML = '';
+            filteredData.forEach(entry => {
+                const tr = document.createElement('tr');
+                tr.style.opacity = '0';
+                tr.style.transform = 'translateY(20px)';
+                const lastReminder = entry.last_reminder ? new Date(parseInt(entry.last_reminder) * 1000).toLocaleString() : 'Pending';
+                tr.innerHTML = `
+                    <td>${entry.equipment_name}</td>
+                    <td>${entry.make}</td>
+                    <td>${entry.manufactured}</td>
+                    <td>${entry.serial_number}</td>
+                    <td>${entry.calibration_date}</td>
+                    <td>${entry.number_of_instruments}</td>
+                    <td>${entry.department}</td>
+                    <td>${entry.emails}</td>
+                    <td>${entry.recalibration_interval}</td>
+                    <td>${lastReminder}</td>
+                    <td>
+                        <button class="btn btn-danger btn-small delete-btn" data-id="${entry.id}" data-tooltip="Delete this entry" aria-label="Delete entry"><i class="fas fa-trash"></i> Delete</button>
+                        <button class="btn btn-info btn-small send-btn" data-id="${entry.id}" data-tooltip="Send reminder email" aria-label="Send reminder"><i class="fas fa-envelope"></i> Send</button>
+                        <button class="btn btn-warning btn-small edit-btn" data-id="${entry.id}" data-equipment_name="${entry.equipment_name}" data-make="${entry.make}" data-manufactured="${entry.manufactured}" data-serial_number="${entry.serial_number}" data-date="${entry.calibration_date}" data-number="${entry.number_of_instruments}" data-department="${entry.department}" data-emails="${entry.emails}" data-interval="${entry.recalibration_interval}" data-tooltip="Edit this entry" aria-label="Edit entry"><i class="fas fa-edit"></i> Edit</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+                setTimeout(() => {
+                    tr.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                    tr.style.opacity = '1';
+                    tr.style.transform = 'translateY(0)';
+                }, 50);
+            });
+
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = btn.dataset.id;
+                    if (confirm('Delete entry?')) {
+                        deleteEntry(id)
+                            .then(() => {
+                                showAlert('success', 'Entry deleted');
+                                loadData();
+                            })
+                            .catch(err => showAlert('danger', 'Delete failed: ' + err.message));
+                    }
+                });
+            });
+
+            document.querySelectorAll('.send-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = btn.dataset.id;
+                    btn.style.animation = 'pulse 0.3s';
+                    sendEmail(id)
+                        .then(() => {
+                            showAlert('success', 'Reminder sent');
+                            loadData();
+                        })
+                        .catch(err => showAlert('danger', 'Email failed: ' + err.message))
+                        .finally(() => {
+                            btn.style.animation = '';
+                        });
+                });
+            });
+
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    await populateDepartmentsSelect();
+                    document.getElementById('equipment_name').value = btn.dataset.equipment_name;
+                    document.getElementById('make').value = btn.dataset.make;
+                    document.getElementById('manufactured').value = btn.dataset.manufactured;
+                    document.getElementById('serial_number').value = btn.dataset.serial_number;
+                    document.getElementById('calibration_date').value = btn.dataset.date;
+                    document.getElementById('number_of_instruments').value = btn.dataset.number;
+                    document.getElementById('department').value = btn.dataset.department;
+                    document.getElementById('emails').value = btn.dataset.emails;
+                    document.getElementById('recalibration_interval').value = btn.dataset.interval;
+                    document.getElementById('addModal').dataset.editId = btn.dataset.id;
+                    document.getElementById('modalTitle').textContent = 'Edit Calibration';
+                    document.getElementById('addModal').style.display = 'block';
+                });
+            });
+        }
+
+        function loadData() {
+            Promise.all([fetchData(), getStatus()]).then(([data, status]) => {
+                tableData = data;
+                document.getElementById('dueSoon').textContent = status.due_soon;
+                document.getElementById('overdue').textContent = status.overdue;
+                document.getElementById('notDue').textContent = status.not_due;
+                filterAndSortTable();
+            }).catch(err => {
+                showAlert('danger', 'Error loading data: ' + err.message);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                const faScript = document.querySelector('script[src*="font-awesome"]');
+                if (!faScript.dataset.loaded) {
+                    faScript.dataset.loaded = true;
+                }
+
+                const themeToggle = document.querySelector('.theme-toggle');
+                themeToggle.addEventListener('click', () => {
+                    document.body.classList.toggle('dark-mode');
+                    const isDark = document.body.classList.contains('dark-mode');
+                    themeToggle.innerHTML = `<i class="fas fa-${isDark ? 'sun' : 'moon'}"></i>`;
+                    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                });
+                if (localStorage.getItem('theme') === 'dark') {
+                    document.body.classList.add('dark-mode');
+                    themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+                }
+
+                updateClock();
+                setInterval(updateClock, 1000);
+
+                const modals = document.querySelectorAll('.modal');
+                modals.forEach(modal => {
+                    modal.addEventListener('click', e => {
+                        if (e.target === modal) modal.style.display = 'none';
+                    });
+                });
+
+                document.querySelectorAll('.close').forEach(close => {
+                    close.addEventListener('click', () => {
+                        close.closest('.modal').style.display = 'none';
+                    });
+                });
+
+                document.getElementById('addNewBtn').addEventListener('click', async () => {
+                    await populateDepartmentsSelect();
+                    resetModal();
+                    document.getElementById('addModal').style.display = 'block';
+                });
+
+                document.getElementById('equipment_name').addEventListener('input', e => {
+                    const valid = e.target.value.match(/[A-Za-z0-9\s]{3,50}/);
+                    e.target.style.borderColor = valid ? 'var(--border)' : 'var(--danger)';
+                    e.target.nextElementSibling.style.display = valid ? 'none' : 'block';
+                });
+                document.getElementById('make').addEventListener('input', e => {
+                    const valid = e.target.value.length >= 1;
+                    e.target.style.borderColor = valid ? 'var(--border)' : 'var(--danger)';
+                    e.target.nextElementSibling.style.display = valid ? 'none' : 'block';
+                });
+                document.getElementById('manufactured').addEventListener('input', e => {
+                    const valid = e.target.value.length >= 1;
+                    e.target.style.borderColor = valid ? 'var(--border)' : 'var(--danger)';
+                    e.target.nextElementSibling.style.display = valid ? 'none' : 'block';
+                });
+                document.getElementById('serial_number').addEventListener('input', e => {
+                    const valid = e.target.value.length >= 1;
+                    e.target.style.borderColor = valid ? 'var(--border)' : 'var(--danger)';
+                    e.target.nextElementSibling.style.display = valid ? 'none' : 'block';
+                });
+                document.getElementById('calibration_date').addEventListener('input', e => {
+                    const valid = validateCalibrationDate(e.target.value);
+                    e.target.style.borderColor = valid ? 'var(--border)' : 'var(--danger)';
+                    e.target.nextElementSibling.style.display = valid ? 'none' : 'block';
+                });
+                document.getElementById('number_of_instruments').addEventListener('input', e => {
+                    const value = parseInt(e.target.value);
+                    const valid = value >= 1 && value <= 1000;
+                    e.target.style.borderColor = valid ? 'var(--border)' : 'var(--danger)';
+                    e.target.nextElementSibling.style.display = valid ? 'none' : 'block';
+                });
+                document.getElementById('department').addEventListener('change', e => {
+                    const selected = departments.find(dep => dep.name === e.target.value);
+                    if (selected) {
+                        document.getElementById('emails').value = selected.emails;
+                    }
+                });
+                document.getElementById('emails').addEventListener('input', e => {
+                    const valid = validateEmails(e.target.value);
+                    e.target.style.borderColor = valid ? 'var(--border)' : 'var(--danger)';
+                    e.target.nextElementSibling.style.display = valid ? 'none' : 'block';
+                });
+
+                document.getElementById('addForm').addEventListener('submit', async e => {
+                    e.preventDefault();
+                    const name = document.getElementById('equipment_name').value.trim();
+                    const make = document.getElementById('make').value.trim();
+                    const manufactured = document.getElementById('manufactured').value.trim();
+                    const serial = document.getElementById('serial_number').value.trim();
+                    const date = document.getElementById('calibration_date').value;
+                    const number = parseInt(document.getElementById('number_of_instruments').value, 10);
+                    const department = document.getElementById('department').value;
+                    const emails = document.getElementById('emails').value.trim();
+                    const interval = parseInt(document.getElementById('recalibration_interval').value, 10);
+                    const sendEmail = document.getElementById('send_email').checked;
+
+                    if (!name || !make || !manufactured || !serial || !date || !number || !department || !emails || !interval) {
+                        showAlert('danger', 'Please fill all fields');
+                        return;
+                    }
+                    if (!validateEmails(emails)) {
+                        showAlert('danger', 'Enter valid comma-separated emails');
+                        return;
+                    }
+                    if (!validateCalibrationDate(date)) {
+                        showAlert('danger', 'Calibration date cannot be in future');
+                        return;
+                    }
+
+                    const obj = {
+                        id: generateId(),
+                        equipment_name: name,
+                        make: make,
+                        manufactured: manufactured,
+                        serial_number: serial,
+                        calibration_date: date,
+                        number_of_instruments: number,
+                        department: department,
+                        emails: emails,
+                        recalibration_interval: interval,
+                        last_reminder: null,
+                        send_email: sendEmail
+                    };
+
+                    const modal = document.getElementById('addModal');
+                    try {
+                        if (modal.dataset.editId) {
+                            obj.id = modal.dataset.editId;
+                            await updateEntry(obj.id, obj);
+                            showAlert('success', 'Entry updated');
+                        } else {
+                            await saveEntry(obj);
+                            showAlert('success', 'Entry saved' + (sendEmail ? ' and email sent' : ''));
+                        }
+                        loadData();
+                        modal.style.display = 'none';
+                        e.target.reset();
+                    } catch (err) {
+                        showAlert('danger', (modal.dataset.editId ? 'Update' : 'Save') + ' error: ' + err.message);
+                    }
+                });
+
+                document.getElementById('uploadCsvBtn').addEventListener('click', () => {
+                    document.getElementById('uploadModal').style.display = 'block';
+                });
+
+                document.getElementById('uploadForm').addEventListener('submit', async e => {
+                    e.preventDefault();
+                    const file = document.getElementById('csvFile').files[0];
+                    if (!file) {
+                        showAlert('danger', 'Select a CSV file');
+                        return;
+                    }
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('send_emails', document.getElementById('send_emails_upload').checked ? 'true' : 'false');
+                    showLoading();
+                    try {
+                        const res = await fetch(`${API_BASE}/upload`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        if (!res.ok) throw new Error('Upload failed');
+                        const data = await res.json();
+                        showAlert('success', data.message || 'CSV uploaded and processed');
+                        loadData();
+                        document.getElementById('uploadModal').style.display = 'none';
+                        e.target.reset();
+                    } catch (err) {
+                        showAlert('danger', err.message);
+                    } finally {
+                        hideLoading();
+                    }
+                });
+
+                document.getElementById('refreshBtn').addEventListener('click', () => {
+                    loadData();
+                });
+
+                document.getElementById('clearDataBtn').addEventListener('click', () => {
+                    if (confirm('Clear all data?')) {
+                        clearAll()
+                            .then(() => {
+                                showAlert('success', 'All data cleared');
+                                loadData();
+                            })
+                            .catch(err => showAlert('danger', 'Clear failed: ' + err.message));
+                    }
+                });
+
+                document.getElementById('sendRemindersBtn').addEventListener('click', () => {
+                    sendReminders()
+                        .then(() => {
+                            showAlert('success', 'Reminders sent if due');
+                            loadData();
+                        })
+                        .catch(err => showAlert('danger', 'Send failed: ' + err.message));
+                });
+
+                document.getElementById('exportCsvBtn').addEventListener('click', () => {
+                    exportToCsv();
+                });
+
+                document.getElementById('manageDepartmentsBtn').addEventListener('click', async () => {
+                    await fetchDepartments();
+                    populateDepartmentsList();
+                    document.getElementById('departmentsModal').style.display = 'block';
+                });
+
+                document.getElementById('addDepartmentBtn').addEventListener('click', () => {
+                    departments.push({ name: '', emails: '' });
+                    populateDepartmentsList();
+                });
+
+                document.getElementById('missingDataBtn').addEventListener('click', () => {
+                    getMissing().then(data => {
+                        const list = document.getElementById('missingList');
+                        list.innerHTML = '';
+                        if (data.length === 0) {
+                            list.innerHTML = '<li>No overdue instruments.</li>';
+                        } else {
+                            data.forEach(entry => {
+                                const li = document.createElement('li');
+                                li.textContent = `${entry.equipment_name} - Due: ${entry.due_date}`;
+                                list.appendChild(li);
+                            });
+                        }
+                        document.getElementById('missingModal').style.display = 'block';
+                    });
+                });
+
+                document.getElementById('emailLogBtn').addEventListener('click', () => {
+                    getEmailLog().then(data => {
+                        const tbody = document.getElementById('emailLogTable');
+                        tbody.innerHTML = '';
+                        if (data.length === 0) {
+                            tbody.innerHTML = '<tr><td colspan="5">No logs available.</td></tr>';
+                        } else {
+                            data.forEach(log => {
+                                const tr = document.createElement('tr');
+                                const ts = new Date(parseInt(log.timestamp) * 1000).toLocaleString();
+                                tr.innerHTML = `
+                                    <td>${ts}</td>
+                                    <td>${log.equipment_name}</td>
+                                    <td>${log.emails}</td>
+                                    <td>${log.type}</td>
+                                    <td>${log.success ? 'Success' : 'Failed'}</td>
+                                `;
+                                tbody.appendChild(tr);
+                            });
+                        }
+                        document.getElementById('emailLogModal').style.display = 'block';
+                    });
+                });
+
+                document.querySelectorAll('.sortable').forEach(th => {
+                    th.addEventListener('click', () => {
+                        const column = th.dataset.sort;
+                        if (sortColumn === column) {
+                            sortDirection *= -1;
+                        } else {
+                            sortColumn = column;
+                            sortDirection = 1;
+                        }
+                        document.querySelectorAll('.sortable').forEach(t => t.classList.remove('sort-asc', 'sort-desc'));
+                        th.classList.add(sortDirection === 1 ? 'sort-asc' : 'sort-desc');
+                        filterAndSortTable();
+                    });
+                });
+
+                document.getElementById('searchInput').addEventListener('input', filterAndSortTable);
+                document.getElementById('statusFilter').addEventListener('change', filterAndSortTable);
+                document.getElementById('intervalFilter').addEventListener('change', filterAndSortTable);
+
+                loadData();
+            } catch (err) {
+                showAlert('danger', 'Initialization error: ' + err.message);
+            }
+        });
+    </script>
+</body>
+
+</html>
