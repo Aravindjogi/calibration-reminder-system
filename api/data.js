@@ -3,9 +3,9 @@ const { google } = require('googleapis');
 async function getSheetsClient() {
   try {
     const auth = new google.auth.JWT({
-      email: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY).client_email,
-      key: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY).private_key,
-      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+      email: JSON.parse(process.env.aravindjogi454@gmail.com).client_email,
+      key: JSON.parse(process.env.zhjp lkvh xlzo jfxv).private_key,
+      scopes: ['https://docs.google.com/spreadsheets/d/1ZuSEy5-wACPxWOEviLcg9ioEQgYjNVwY97N83zeMJPQ/edit?gid=0#gid=0'],
     });
     return google.sheets({ version: 'v4', auth });
   } catch (err) {
@@ -58,4 +58,5 @@ module.exports = async (req, res) => {
   } catch (err) {
     return res.status(500).json({ error: 'Server error: ' + err.message });
   }
+
 };
