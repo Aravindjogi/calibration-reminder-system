@@ -1,4 +1,4 @@
-const { google } = require('googleapis');
+const { createClient } = require('@vercel/kv');
 const nodemailer = require('nodemailer');
 const csvParser = require('csv-parser');
 const multer = require('multer');
@@ -6,29 +6,25 @@ const stream = require('stream');
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-async function getSheetsClient() {
+async function getKVClient() {
   try {
-    const auth = new google.auth.JWT({
-      email: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY).client_email,
-      key: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY).private_key,
-      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    return createClient({
+      url: process.env.KV_REST_API_URL,
+      token: process.env.KV_REST_API_TOKEN,
     });
-    return google.sheets({ version: 'v4', auth });
   } catch (err) {
-    throw new Error('Failed to initialize Google Sheets client: ' + err.message);
+    throw new Error('Failed to initialize KV client: ' + err.message);
   }
 }
 
-async function logEmail(sheets, spreadsheetId, equipmentName, emails, type, success) {
+async function logEmail(kv, equipmentName, emails, type, success) {
   try {
     const timestamp = Math.floor(Date.now() / 1000);
-    const values = [[timestamp, equipmentName, emails.join(','), type, success ? 'TRUE' : 'FALSE']];
-    await sheets.spreadsheets.values.append({
-      spreadsheetId,
-      range: 'EmailLog!A:E',
-      valueInputOption: 'RAW',
-      resource: { values },
-    });
+    const EMAIL_LOG_KEY = 'email_log';
+    let logs = (await kv.get(EMAIL_LOG_KEY)) || [];
+    if (!Array.isArray(logs)) logs = [];
+    logs.push({ timestamp, equipment_name: equipmentName, emails: emails.join(','), type, success });
+    await kv.set(EMAIL_LOG_KEY, logs);
   } catch (err) {
     console.error('Failed to log email:', err.message);
   }
@@ -48,8 +44,8 @@ module.exports = async (req, res) => {
     }
 
     const sendEmails = req.body.send_emails === 'true';
-    const sheets = await getSheetsClient();
-    const spreadsheetId = process.env.SPREADSHEET_ID;
+    const kv = await getKVClient();
+    const CALIBRATION_KEY = 'calibration_data';
     const values = [];
     const errors = [];
     const emailPromises = [];
@@ -89,19 +85,19 @@ module.exports = async (req, res) => {
               errors.push(`Future calibration date in row for ${row.equipment_name}`);
               return;
             }
-            values.push([
-              Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
-              row.equipment_name,
-              row.make,
-              row.manufactured,
-              row.serial_number,
-              row.calibration_date,
-              row.number_of_instruments,
-              row.department,
-              row.team_emails,
-              row['interval_(months)'],
-              '',
-            ]);
+            values.push({
+              id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+              equipment_name: row.equipment_name,
+              make: row.make,
+              manufactured: row.manufactured,
+              serial_number: row.serial_number,
+              calibration_date: row.calibration_date,
+              number_of_instruments: row.number_of_instruments,
+              department: row.department,
+              emails: row.team_emails,
+              recalibration_interval: row['interval_(months)'],
+              last_reminder: ''
+            });
 
             if (sendEmails) {
               const dueDate = new Date(row.calibration_date);
@@ -122,9 +118,9 @@ module.exports = async (req, res) => {
               };
               emailPromises.push(
                 transporter.sendMail(mailOptions)
-                  .then(() => logEmail(sheets, spreadsheetId, row.equipment_name, emails, type, true))
+                  .then(() => logEmail(kv, row.equipment_name, emails, type, true))
                   .catch(err => {
-                    logEmail(sheets, spreadsheetId, row.equipment_name, emails, type, false);
+                    logEmail(kv, row.equipment_name, emails, type, false);
                     console.error(`Failed to send email for ${row.equipment_name}:`, err.message);
                   })
               );
@@ -142,12 +138,10 @@ module.exports = async (req, res) => {
     }
 
     if (values.length > 0) {
-      await sheets.spreadsheets.values.append({
-        spreadsheetId,
-        range: 'CalibrationData!A:K',
-        valueInputOption: 'RAW',
-        resource: { values },
-      });
+      let currentData = (await kv.get(CALIBRATION_KEY)) || [];
+      if (!Array.isArray(currentData)) currentData = [];
+      currentData.push(...values);
+      await kv.set(CALIBRATION_KEY, currentData);
     }
 
     if (sendEmails && emailPromises.length > 0) {
