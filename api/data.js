@@ -1,62 +1,82 @@
-const { google } = require('googleapis');
+const { createClient } = require('@vercel/kv');
 
-async function getSheetsClient() {
+async function getKVClient() {
   try {
-    const auth = new google.auth.JWT({
-      email: JSON.parse(process.env.aravindjogi454@gmail.com).client_email,
-      key: JSON.parse(process.env.zhjp lkvh xlzo jfxv).private_key,
-      scopes: ['https://docs.google.com/spreadsheets/d/1ZuSEy5-wACPxWOEviLcg9ioEQgYjNVwY97N83zeMJPQ/edit?gid=0#gid=0'],
+    return createClient({
+      url: process.env.KV_REST_API_URL,
+      token: process.env.KV_REST_API_TOKEN,
     });
-    return google.sheets({ version: 'v4', auth });
   } catch (err) {
-    throw new Error('Failed to initialize Google Sheets client: ' + err.message);
+    throw new Error('Failed to initialize KV client: ' + err.message);
   }
 }
 
 module.exports = async (req, res) => {
   try {
-    const sheets = await getSheetsClient();
-    const spreadsheetId = process.env.SPREADSHEET_ID;
-    const range = 'Departments!A1:B';
+    const kv = await getKVClient();
+    const CALIBRATION_KEY = 'calibration_data';
 
     if (req.method === 'GET') {
-      const response = await sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range,
-      });
-      const rows = response.data.values || [];
-      const headers = rows.shift() || [];
-      const data = rows.map(row => ({
-        name: row[0] || '',
-        emails: row[1] || '',
-      }));
+      const download = req.query.download === 'true';
+      let data = (await kv.get(CALIBRATION_KEY)) || [];
+      if (!Array.isArray(data)) data = [];
+      if (download) {
+        res.setHeader('Content-Disposition', 'attachment; filename=calibration_data.json');
+        res.setHeader('Content-Type', 'application/json');
+      }
       return res.status(200).json(data);
     }
 
     if (req.method === 'POST') {
-      const departments = req.body;
-      if (!Array.isArray(departments)) {
-        return res.status(400).json({ error: 'Expected an array of departments' });
+      const data = req.body;
+      if (!data.id || !data.equipment_name || !data.make || !data.manufactured || !data.serial_number || !data.calibration_date || !data.number_of_instruments || !data.department || !data.emails || !data.recalibration_interval) {
+        return res.status(400).json({ error: 'Missing required fields' });
       }
-      const values = departments.map(dep => [dep.name, dep.emails]);
-      await sheets.spreadsheets.values.clear({
-        spreadsheetId,
-        range: 'Departments!A2:B',
-      });
-      if (values.length > 0) {
-        await sheets.spreadsheets.values.append({
-          spreadsheetId,
-          range: 'Departments!A:B',
-          valueInputOption: 'RAW',
-          resource: { values },
-        });
+      let currentData = (await kv.get(CALIBRATION_KEY)) || [];
+      if (!Array.isArray(currentData)) currentData = [];
+      currentData.push(data);
+      await kv.set(CALIBRATION_KEY, currentData);
+      return res.status(200).json({ message: 'Data saved' });
+    }
+
+    if (req.method === 'PUT') {
+      const data = req.body;
+      if (!data.id) {
+        return res.status(400).json({ error: 'ID is required' });
       }
-      return res.status(200).json({ message: 'Departments saved' });
+      let currentData = (await kv.get(CALIBRATION_KEY)) || [];
+      if (!Array.isArray(currentData)) currentData = [];
+      const index = currentData.findIndex(item => item.id === data.id);
+      if (index === -1) {
+        return res.status(404).json({ error: 'Entry not found' });
+      }
+      currentData[index] = data;
+      await kv.set(CALIBRATION_KEY, currentData);
+      return res.status(200).json({ message: 'Data updated' });
+    }
+
+    if (req.method === 'DELETE') {
+      const { id, all } = req.body;
+      if (all) {
+        await kv.set(CALIBRATION_KEY, []);
+        return res.status(200).json({ message: 'All data cleared' });
+      }
+      if (!id) {
+        return res.status(400).json({ error: 'ID is required' });
+      }
+      let currentData = (await kv.get(CALIBRATION_KEY)) || [];
+      if (!Array.isArray(currentData)) currentData = [];
+      const index = currentData.findIndex(item => item.id === id);
+      if (index === -1) {
+        return res.status(404).json({ error: 'Entry not found' });
+      }
+      currentData.splice(index, 1);
+      await kv.set(CALIBRATION_KEY, currentData);
+      return res.status(200).json({ message: 'Data deleted' });
     }
 
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (err) {
     return res.status(500).json({ error: 'Server error: ' + err.message });
   }
-
 };
