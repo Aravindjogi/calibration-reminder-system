@@ -3,8 +3,8 @@ const { createClient } = require('@vercel/kv');
 async function getKVClient() {
   try {
     return createClient({
-       url: process.env.https://ecfg_zerfdduvbcumr44psawcq9nnh2yb.kv.vercel-storage.com,
-      token: process.env.5bf6b008a9ec05f6870c476d10b53211797aa000f95aae344ae60f9b422286da,
+       url: process.env.KV_REST_API_URL,
+      token: process.env.KV_REST_API_TOKEN,
     });
   } catch (err) {
     throw new Error('Failed to initialize KV client: ' + err.message);
@@ -41,4 +41,5 @@ module.exports = async (req, res) => {
     return res.status(500).json({ error: 'Server error: ' + err.message });
   }
 };
+
 
