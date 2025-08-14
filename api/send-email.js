@@ -1,29 +1,25 @@
-const { google } = require('googleapis');
+const { createClient } = require('@vercel/kv');
 const nodemailer = require('nodemailer');
 
-async function getSheetsClient() {
+async function getKVClient() {
   try {
-    const auth = new google.auth.JWT({
-      email: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY).client_email,
-      key: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY).private_key,
-      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    return createClient({
+      url: process.env.KV_REST_API_URL,
+      token: process.env.KV_REST_API_TOKEN,
     });
-    return google.sheets({ version: 'v4', auth });
   } catch (err) {
-    throw new Error('Failed to initialize Google Sheets client: ' + err.message);
+    throw new Error('Failed to initialize KV client: ' + err.message);
   }
 }
 
-async function logEmail(sheets, spreadsheetId, equipmentName, emails, type, success) {
+async function logEmail(kv, equipmentName, emails, type, success) {
   try {
     const timestamp = Math.floor(Date.now() / 1000);
-    const values = [[timestamp, equipmentName, emails.join(','), type, success ? 'TRUE' : 'FALSE']];
-    await sheets.spreadsheets.values.append({
-      spreadsheetId,
-      range: 'EmailLog!A:E',
-      valueInputOption: 'RAW',
-      resource: { values },
-    });
+    const EMAIL_LOG_KEY = 'email_log';
+    let logs = (await kv.get(EMAIL_LOG_KEY)) || [];
+    if (!Array.isArray(logs)) logs = [];
+    logs.push({ timestamp, equipment_name: equipmentName, emails: emails.join(','), type, success });
+    await kv.set(EMAIL_LOG_KEY, logs);
   } catch (err) {
     console.error('Failed to log email:', err.message);
   }
@@ -40,27 +36,18 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const sheets = await getSheetsClient();
-    const spreadsheetId = process.env.SPREADSHEET_ID;
-    const range = 'CalibrationData!A1:K';
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId,
-      range,
-    });
-    const rows = response.data.values || [];
-    const headers = rows.shift();
-    const entry = rows.find(row => row[0] === id);
+    const kv = await getKVClient();
+    const CALIBRATION_KEY = 'calibration_data';
+    let data = (await kv.get(CALIBRATION_KEY)) || [];
+    if (!Array.isArray(data)) data = [];
+    const entry = data.find(item => item.id === id);
     if (!entry) {
       return res.status(404).json({ error: 'Entry not found' });
     }
 
-    const data = headers.reduce((obj, header, index) => {
-      obj[header.toLowerCase().replace(/ /g, '_')] = entry[index] || '';
-      return obj;
-    }, {});
-    const emails = data.emails.split(',').map(e => e.trim());
-    const dueDate = new Date(data.calibration_date);
-    dueDate.setMonth(dueDate.getMonth() + parseInt(data.recalibration_interval));
+    const emails = entry.emails.split(',').map(e => e.trim());
+    const dueDate = new Date(entry.calibration_date);
+    dueDate.setMonth(dueDate.getMonth() + parseInt(entry.recalibration_interval));
     const type = dueDate < new Date() ? 'Overdue' : 'Due Soon';
 
     const transporter = nodemailer.createTransport({
@@ -74,26 +61,21 @@ module.exports = async (req, res) => {
     const mailOptions = {
       from: process.env.GMAIL_USER,
       to: emails,
-      subject: `Calibration Reminder: ${data.equipment_name} (${type})`,
-      text: `Equipment: ${data.equipment_name}\nSerial Number: ${data.serial_number}\nCalibration Date: ${data.calibration_date}\nDue Date: ${dueDate.toISOString().split('T')[0]}\nDepartment: ${data.department}\nPlease schedule calibration.`,
+      subject: `Calibration Reminder: ${entry.equipment_name} (${type})`,
+      text: `Equipment: ${entry.equipment_name}\nSerial Number: ${entry.serial_number}\nCalibration Date: ${entry.calibration_date}\nDue Date: ${dueDate.toISOString().split('T')[0]}\nDepartment: ${entry.department}\nPlease schedule calibration.`,
     };
 
     await transporter.sendMail(mailOptions);
-    const rowIndex = rows.findIndex(row => row[0] === id);
-    const values = [[Math.floor(Date.now() / 1000)]];
-    await sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: `CalibrationData!K${rowIndex + 2}`,
-      valueInputOption: 'RAW',
-      resource: { values },
-    });
+    const index = data.findIndex(item => item.id === id);
+    data[index].last_reminder = Math.floor(Date.now() / 1000);
+    await kv.set(CALIBRATION_KEY, data);
 
-    await logEmail(sheets, spreadsheetId, data.equipment_name, emails, type, true);
+    await logEmail(kv, entry.equipment_name, emails, type, true);
     return res.status(200).json({ message: 'Email sent and entry updated' });
   } catch (err) {
     try {
-      const sheets = await getSheetsClient();
-      await logEmail(sheets, process.env.SPREADSHEET_ID, data?.equipment_name || 'Unknown', emails || [], type || 'Unknown', false);
+      const kv = await getKVClient();
+      await logEmail(kv, entry?.equipment_name || 'Unknown', emails || [], type || 'Unknown', false);
     } catch (logErr) {
       console.error('Failed to log email error:', logErr.message);
     }
